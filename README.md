@@ -9,6 +9,7 @@ No encontraba algo que me dejara instalar mas o menos facil kubernetes, sino sol
 Seguramente me faltó buscar un poco mas. 
 
 Por eso se me dió por hacerlo a mi manera, que no quiere decir, ni por casualidad, que sea la mejor forma, la más eficiente ni la más optimizada (todo lo contrario), pero en mi necesidad del día a día, me fué más que suficiente.
+Sí. Conozco de la exitencia de minikube, k3s, y otros. Pero este es mío, mi tesoro, mi preciado tesoro... ~~Gollum, Gollum!~~
 
 ## Instalación
 Este script está orientado a SO basados en `Redhat`, como ser,` CentOS`, `AlmaLinux`, `RockyLinux`, etc.
