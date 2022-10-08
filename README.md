@@ -23,6 +23,7 @@ Ya clonado, solo debemos ejecutarlo como `root`:
 
 ```
 cd k8s
+chmod +x install-kubernetes.sh
 sudo ./install-kubernetes.sh
 ```
 Al inicio de la ejecucion, el script recopilara alguna informacion que le hace falta para poder instalar todo.
