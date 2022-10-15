@@ -25,6 +25,8 @@ HOST_IP="192.168.0.70"
 KUBE_VERSION="v1.25.2"
 
 # Helm deployments Variables
+INSTALL_HELM=0
+INSTALL_FLANNEL=0
 INSTALL_DASHBOARD=0
 INSTALL_NGINX_IC=0
 INSTALL_METRICS=0
@@ -98,35 +100,33 @@ case $master in
     ;;
 esac
 
-echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}HELM? (y/n)${END}${GREEN} ]${END}: "
-read helm
-case $helm in
-  y|Y)
-    INSTALL_HELM=1
-    echo -e "\tWe will install HELM\n"
-    ;;
-  n|N)
-    INSTALL_HELM=0
-    echo -e "\tWe will NOT install HELM\n"
-    ;;
-  *)
-    echo "Option not recognized... exit"
-    exit 1
-    ;;
-esac
-
-# if INSTALL_HELM == 1, then we show deployments that can be installed by helm.
-if [ $INSTALL_HELM -eq 1 ];then
-  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Metrics server? (y/n)${END}${GREEN} ]${END}: "
-  read metrics
-  case $metrics in
+if  [ $IS_MASTER -eq 1 ];then
+  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}HELM? (y/n)${END}${GREEN} ]${END}: "
+  read helm
+  case $helm in
     y|Y)
-      INSTALL_METRICS=1
-      echo -e "\tWe will install metrics server\n"
+      INSTALL_HELM=1
+      echo -e "\tWe will install HELM\n"
       ;;
     n|N)
-      INSTALL_METRICS=0
-      echo -e "\tWe will NOT install the metrics server\n"
+      INSTALL_HELM=0
+      echo -e "\tWe will NOT install HELM\n"
+      ;;
+    *)
+      echo "Option not recognized... exit"
+      exit 1
+      ;;
+  esac
+  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}flannel CNI? (y/n)${END}${GREEN} ]${END}: "
+  read flannel
+  case $flannel in
+    y|Y)
+      INSTALL_FLANNEL=1
+      echo -e "\tWe will install the flannel CNI Plugin\n"
+      ;;
+    n|N)
+      INSTALL_FLANNEL=0
+      echo -e "\tWe will NOT install the flannel CNI Plugin\n"
       ;;
     *)
       echo "Option not recognized... exit"
@@ -134,56 +134,60 @@ if [ $INSTALL_HELM -eq 1 ];then
       ;;
   esac
 
-  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Dashboard? (y/n)${END}${GREEN} ]${END}: "
-  read dashboard
-  case $dashboard in
-    y|Y)
-      INSTALL_DASHBOARD=1
-      echo -e "\tWe will install the kubernetes dashboard\n"
-      ;;
-    n|N)
-      INSTALL_DASHBOARD=0
-      echo -e "\tWe will NOT install the kubernetes dashboard\n"
-      ;;
-    *)
-      echo "Option not recognized... exit"
-      exit 1
-      ;;
-  esac
-  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}ingress-nginx IC? (y/n)${END}${GREEN} ]${END}: "
-  read nginx
-  case $nginx in
-    y|Y)
-      INSTALL_NGINX_IC=1
-      echo -e "\tWe will install the ingress-nginx IC\n"
-      ;;
-    n|N)
-      INSTALL_NGINX_IC=0
-      echo -e "\tWe will NOT install the ingress-nginx IC\n"
-      ;;
-    *)
-      echo "Option not recognized... exit"
-      exit 1
-      ;;
-  esac
+
+  # if INSTALL_HELM == 1, then we show deployments that can be installed by helm.
+  if [ $INSTALL_HELM -eq 1 ];then
+    echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Metrics server? (y/n)${END}${GREEN} ]${END}: "
+    read metrics
+    case $metrics in
+      y|Y)
+        INSTALL_METRICS=1
+        echo -e "\tWe will install metrics server\n"
+        ;;
+      n|N)
+        INSTALL_METRICS=0
+        echo -e "\tWe will NOT install the metrics server\n"
+        ;;
+      *)
+        echo "Option not recognized... exit"
+        exit 1
+        ;;
+    esac
+
+    echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Dashboard? (y/n)${END}${GREEN} ]${END}: "
+    read dashboard
+    case $dashboard in
+      y|Y)
+        INSTALL_DASHBOARD=1
+        echo -e "\tWe will install the kubernetes dashboard\n"
+        ;;
+      n|N)
+        INSTALL_DASHBOARD=0
+        echo -e "\tWe will NOT install the kubernetes dashboard\n"
+        ;;
+      *)
+        echo "Option not recognized... exit"
+        exit 1
+        ;;
+    esac
+    echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}ingress-nginx IC? (y/n)${END}${GREEN} ]${END}: "
+    read nginx
+    case $nginx in
+      y|Y)
+        INSTALL_NGINX_IC=1
+        echo -e "\tWe will install the ingress-nginx IC\n"
+        ;;
+      n|N)
+        INSTALL_NGINX_IC=0
+        echo -e "\tWe will NOT install the ingress-nginx IC\n"
+        ;;
+      *)
+        echo "Option not recognized... exit"
+        exit 1
+        ;;
+    esac
+  fi
 fi
-
-echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}flannel CNI? (y/n)${END}${GREEN} ]${END}: "
-read flannel
-case $flannel in
-  y|Y)
-    INSTALL_FLANNEL=1
-    echo -e "\tWe will install the flannel CNI Plugin\n"
-    ;;
-  n|N)
-    INSTALL_FLANNEL=0
-    echo -e "\tWe will NOT install the flannel CNI Plugin\n"
-    ;;
-  *)
-    echo "Option not recognized... exit"
-    exit 1
-    ;;
-esac
 
 # Show a little summary
 echo "LAN CIDR: $PUBLIC_LAN"
