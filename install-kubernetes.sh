@@ -66,6 +66,20 @@ else
   exit
 fi
 
+echo -en "${GREEN}[ ${YELLOW}MASTER IP Address (Ex: 192.168.0.70)${END}${GREEN} ]${END}: "
+read masterip
+if [[ $masterip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+  OIFS=$IFS
+  IFS='./'
+  ip=($masterip)
+  IFS=$OIFS
+  [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+  MASTER_IP=$masterip
+else
+  echo -e "Ilegal IP Address. Exiting..."
+  exit
+fi
+
 echo -en "${GREEN}[ ${YELLOW}Update ${BLUE}${BOLD}packages? (y/n)${END}${GREEN} ]${END}: "
 read packages
 case $packages in
