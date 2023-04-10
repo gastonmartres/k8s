@@ -315,7 +315,7 @@ EOF
 sysctl --system
 
 
-if [ $INSTALL_DOCKER -eq 1 ];then
+#if [ $INSTALL_DOCKER -eq 1 ];then
   # Add the Docker REPO
   # echo -e "${RED}[${YELLOW} Installing DOCKER ${RED}]${END}"
   # sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
@@ -340,7 +340,7 @@ if [ $INSTALL_DOCKER -eq 1 ];then
   # systemctl daemon-reload
   # sudo systemctl enable docker
   # sudo systemctl start docker
-fi
+#fi
 
 if [ $INSTALL_PODMAN -eq 1 ];then
   dnf install podman -y
