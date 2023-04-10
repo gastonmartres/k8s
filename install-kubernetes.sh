@@ -314,30 +314,37 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sysctl --system
 
-# Add the Docker REPO
-echo -e "${RED}[${YELLOW} Installing DOCKER ${RED}]${END}"
-sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
-sudo dnf install docker-ce --nobest -y --allowerasing
-mkdir /etc/docker
-cat <<EOF >> /etc/docker/daemon.json
-{
-    "exec-opts": ["native.cgroupdriver=systemd"],
-    "log-driver": "json-file",
-    "log-opts": {
-      "max-size": "100m"
-    },
-    "storage-driver": "overlay2",
-    "storage-opts": [
-      "overlay2.override_kernel_check=true"
-    ]
-  }
-EOF
-mkdir -p /etc/containerd
-containerd config default>/etc/containerd/config.toml
-mkdir -p /etc/systemd/system/docker.service.d
-systemctl daemon-reload
-sudo systemctl enable docker
-sudo systemctl start docker
+
+if [ $INSTALL_DOCKER -eq 1 ];then
+  # Add the Docker REPO
+  echo -e "${RED}[${YELLOW} Installing DOCKER ${RED}]${END}"
+  sudo dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+  sudo dnf install docker-ce --nobest -y --allowerasing
+  mkdir /etc/docker
+  cat <<EOF >> /etc/docker/daemon.json
+  {
+      "exec-opts": ["native.cgroupdriver=systemd"],
+      "log-driver": "json-file",
+      "log-opts": {
+        "max-size": "100m"
+      },
+      "storage-driver": "overlay2",
+      "storage-opts": [
+        "overlay2.override_kernel_check=true"
+      ]
+    }
+  EOF
+  mkdir -p /etc/containerd
+  containerd config default>/etc/containerd/config.toml
+  mkdir -p /etc/systemd/system/docker.service.d
+  systemctl daemon-reload
+  sudo systemctl enable docker
+  sudo systemctl start docker
+fi
+
+if [ $INSTALL_PODMAN -eq 1 ];then
+  dnf install podman -y
+fi
 
 # Add the kubernetes REPO
 echo -e "${RED}[${YELLOW} Installing Kubernetes ${RED}]${END}"
