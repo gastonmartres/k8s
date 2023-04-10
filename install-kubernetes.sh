@@ -1,7 +1,7 @@
 #!/bin/bash
 # Gaston Martres <gastonmartres@gmail.com>
 #
-# Script for installing kubernetes in RHEL like distros.
+# Script for installing kubernetes in AlmaLinux like distros.
 #
 # NOTAS: 
 # 1 - En la instalación de calico, se reemplaza el CIDR por defecto para los 
@@ -36,9 +36,12 @@ INSTALL_CALICO=0
 INSTALL_DASHBOARD=0
 INSTALL_NGINX_IC=0
 INSTALL_METRICS=0
+INSTALL_DOCKER=0
+INSTALL_PODMAN=0
+
 
 if [ $USER != "root" ];then
-  echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN AS ROOT! EXITING${END}"
+  echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN AS ROOT! EXITING...${END}"
   exit
 fi
 
@@ -52,8 +55,6 @@ else
   echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN ON ALMALINUX! EXITING...${END}"
   exit
 fi
-
-exit
 
 clear
 echo -e "${GREEN}[ ${YELLOW}This will install Kubernetes ${BLUE}${BOLD}${KUBE_VERSION}${END}${GREEN} ]${END}"
@@ -169,6 +170,24 @@ if  [ $IS_MASTER -eq 1 ];then
       ;;
   esac
 
+  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Podman or Docker? (p/d)${END}${GREEN} ]${END}: "
+  read engine
+  case $engine in
+    p|P)
+      INSTALL_DOCKER=0
+      INSTALL_PODMAN=1
+      echo -e "\tWe will install Podman engine...\n"
+      ;;
+    d|D)
+      INSTALL_DOCKER=1
+      INSTALL_PODMAN=0
+      echo -e "\tWe will install Docker engine...\n"
+      ;;
+    *)
+      echo "Option not recognized... exit"
+      exit 1
+      ;;
+  esac
 
   # if INSTALL_HELM == 1, then we show deployments that can be installed by helm.
   if [ $INSTALL_HELM -eq 1 ];then
@@ -235,6 +254,8 @@ echo "INSTALL_METRICS: $INSTALL_METRICS"
 echo "INSTALL_FLANNEL: $INSTALL_FLANNEL"
 echo "INSTALL_CALICO: $INSTALL_CALICO"
 echo "INSTALL_NGINX_IC: $INSTALL_NGINX_IC"
+echo "INSTALL_PODMAN: $INSTALL_PODMAN"
+echo "INSTALL_DOCKER: $INSTALL_DOCKER"
 
 echo -en "${GREEN}[ ${RED}${BOLD}Continue? (y/n)${END}${GREEN} ]${END}: "
 read yesno
