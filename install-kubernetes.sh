@@ -22,11 +22,12 @@ MASTER_IP="192.168.0.70"
 HOST_IP="192.168.0.70"
 
 # Kubernetes Variables
-KUBE_VERSION="v1.25.2"
+KUBE_VERSION="1.24.12-0"
 
 # Helm deployments Variables
 INSTALL_HELM=0
 INSTALL_FLANNEL=0
+INSTALL_CALICO=0
 INSTALL_DASHBOARD=0
 INSTALL_NGINX_IC=0
 INSTALL_METRICS=0
@@ -35,6 +36,19 @@ if [ $USER != "root" ];then
   echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN AS ROOT! EXITING${END}"
   exit
 fi
+
+if [ -f /etc/os-release ];then 
+  cat /etc/os-release | grep -i "almalinux"
+  if [ $? -ne 0 ];then
+    echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN ON ALMALINUX! EXITING...${END}"
+    exit
+  fi
+else
+  echo -e "${RED}${BOLD}[ ERROR ]${YELLOW} THIS COMMAND IS INTENDED TO RUN ON ALMALINUX! EXITING...${END}"
+  exit
+fi
+
+exit
 
 clear
 echo -e "${GREEN}[ ${YELLOW}This will install Kubernetes ${BLUE}${BOLD}${KUBE_VERSION}${END}${GREEN} ]${END}"
@@ -131,16 +145,18 @@ if  [ $IS_MASTER -eq 1 ];then
       exit 1
       ;;
   esac
-  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}flannel CNI? (y/n)${END}${GREEN} ]${END}: "
-  read flannel
-  case $flannel in
-    y|Y)
-      INSTALL_FLANNEL=1
-      echo -e "\tWe will install the flannel CNI Plugin\n"
-      ;;
-    n|N)
+  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}flannel CNI or Calico CNI? (f/c)${END}${GREEN} ]${END}: "
+  read cni
+  case $cni in
+    c|C)
       INSTALL_FLANNEL=0
-      echo -e "\tWe will NOT install the flannel CNI Plugin\n"
+      INSTALL_CALICO=1
+      echo -e "\tWe will install the Calico CNI Plugin\n"
+      ;;
+    f|F)
+      INSTALL_FLANNEL=1
+      INSTALL_CALICO=0
+      echo -e "\tWe will install the flannel CNI Plugin\n"
       ;;
     *)
       echo "Option not recognized... exit"
@@ -212,6 +228,7 @@ echo "INSTALL_HELM: $INSTALL_HELM"
 echo "INSTALL_DASHBOARD: $INSTALL_DASHBOARD"
 echo "INSTALL_METRICS: $INSTALL_METRICS"
 echo "INSTALL_FLANNEL: $INSTALL_FLANNEL"
+echo "INSTALL_CALICO: $INSTALL_CALICO"
 echo "INSTALL_NGINX_IC: $INSTALL_NGINX_IC"
 
 echo -en "${GREEN}[ ${RED}${BOLD}Continue? (y/n)${END}${GREEN} ]${END}: "
@@ -253,18 +270,21 @@ sudo sed -i '/ swap / s/^/#/' /etc/fstab
 
 # Configure firewall
 echo -e "${RED}[${YELLOW} Configuring Firewall ${RED}]${END}"
-sudo firewall-cmd --permanent --add-port=80/tcp
-sudo firewall-cmd --permanent --add-port=443/tcp
-sudo firewall-cmd --permanent --add-port=6443/tcp
-sudo firewall-cmd --permanent --add-port=2379-2380/tcp
-sudo firewall-cmd --permanent --add-port=10250/tcp
-sudo firewall-cmd --permanent --add-port=10251/tcp
-sudo firewall-cmd --permanent --add-port=10252/tcp
-sudo firewall-cmd --permanent --add-port=10255/tcp 
-sudo firewall-cmd --permanent --add-port=30000-32767/tcp
-sudo firewall-cmd --zone=public --permanent --add-source=${PUBLIC_LAN}
-sudo firewall-cmd --add-masquerade --permanent
-sudo firewall-cmd --reload
+#sudo firewall-cmd --permanent --add-port=80/tcp
+#sudo firewall-cmd --permanent --add-port=443/tcp
+#sudo firewall-cmd --permanent --add-port=6443/tcp
+#sudo firewall-cmd --permanent --add-port=2379-2380/tcp
+#sudo firewall-cmd --permanent --add-port=10250/tcp
+#sudo firewall-cmd --permanent --add-port=10251/tcp
+#sudo firewall-cmd --permanent --add-port=10252/tcp
+#sudo firewall-cmd --permanent --add-port=10255/tcp 
+#sudo firewall-cmd --permanent --add-port=30000-32767/tcp
+#sudo firewall-cmd --zone=public --permanent --add-source=${PUBLIC_LAN}
+#sudo firewall-cmd --add-masquerade --permanent
+#sudo firewall-cmd --reload
+systemctl stop firewalld
+systemctl disable firewalld
+
 
 # Add hostname to /etc/hosts
 echo -e "${RED}[${YELLOW} Adding hosts to /etc/hosts ${RED}]${END}"
@@ -316,18 +336,16 @@ gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
 EOF
-dnf install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+dnf install -y kubelet-${KUBE_VERSION} kubeadm-${KUBE_VERSION} kubectl-${KUBE_VERSION} --disableexcludes=kubernetes
 
 echo "KUBELET_EXTRA_ARGS= --runtime-cgroups=/systemd/system.slice --kubelet-cgroups=/systemd/system.slice" > /etc/sysconfig/kubelet
 systemctl enable --now kubelet
 if [ $IS_MASTER -eq 1 ];then
   echo -e "${RED}[${YELLOW} Initializing Kubernetes ${RED}]${END}"
   sudo kubeadm config images pull --cri-socket unix:///run/containerd/containerd.sock \
-  --kubernetes-version ${KUBE_VERSION}
 
   sudo kubeadm init --pod-network-cidr=${PODS_CIDR} \
   --upload-certs \
-  --kubernetes-version ${KUBE_VERSION}  \
   --control-plane-endpoint=${MASTER_IP} \
   --node-name $(hostname) \
   --ignore-preflight-errors all  \
@@ -359,6 +377,19 @@ if [ $IS_MASTER -eq 1 ];then
     echo -e "${RED}[${YELLOW} Removing taint so master node can schedule pods ${RED}]${END}"
     kubectl taint node $(hostname) node-role.kubernetes.io/control-plane:NoSchedule-
     kubectl taint node $(hostname) node-role.kubernetes.io/master:NoSchedule-
+  fi
+  
+  if [ $INSTALL_CALICO -eq 1 ];then
+    echo -e "\n${RED}[${YELLOW} Deploying Network Plugin ${RED}]${END}"
+    
+    kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/tigera-operator.yaml
+    curl -O -L https://raw.githubusercontent.com/projectcalico/calico/v3.25.1/manifests/custom-resources.yaml
+    sed 's/192.168/10.244/g' -i custom-resources.yaml
+    kubectl create -f custom-resources.yaml
+    kubectl taint nodes --all node-role.kubernetes.io/control-plane-
+    kubectl taint nodes --all node-role.kubernetes.io/master-
+    curl -L https://github.com/projectcalico/calico/releases/latest/download/calicoctl-linux-amd64 -o /usr/local/bin/calicoctl
+    chmod +x /usr/local/bin/calicoctl
   fi
 
   if [ $INSTALL_HELM -eq 1 ];then
