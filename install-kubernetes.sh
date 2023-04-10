@@ -3,10 +3,15 @@
 #
 # Script for installing kubernetes in RHEL like distros.
 #
+# NOTAS: 
+# 1 - En la instalación de calico, se reemplaza el CIDR por defecto para los 
+#     service pods que espera Calico (192.168.0.0/16), por el default que usa 
+#     Kuber (10.244.0.0/16).
+#
 # TODO: 
 # - IP Address detection.
 # - Command line parameters
-#
+# - Save config in file
 
 RED="\e[31m"
 GREEN="\e[32m"
@@ -270,18 +275,6 @@ sudo sed -i '/ swap / s/^/#/' /etc/fstab
 
 # Configure firewall
 echo -e "${RED}[${YELLOW} Configuring Firewall ${RED}]${END}"
-#sudo firewall-cmd --permanent --add-port=80/tcp
-#sudo firewall-cmd --permanent --add-port=443/tcp
-#sudo firewall-cmd --permanent --add-port=6443/tcp
-#sudo firewall-cmd --permanent --add-port=2379-2380/tcp
-#sudo firewall-cmd --permanent --add-port=10250/tcp
-#sudo firewall-cmd --permanent --add-port=10251/tcp
-#sudo firewall-cmd --permanent --add-port=10252/tcp
-#sudo firewall-cmd --permanent --add-port=10255/tcp 
-#sudo firewall-cmd --permanent --add-port=30000-32767/tcp
-#sudo firewall-cmd --zone=public --permanent --add-source=${PUBLIC_LAN}
-#sudo firewall-cmd --add-masquerade --permanent
-#sudo firewall-cmd --reload
 systemctl stop firewalld
 systemctl disable firewalld
 
@@ -361,7 +354,6 @@ if [ $IS_MASTER -eq 1 ];then
     sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
     sudo chown $(id -u):$(id -g) $HOME/.kube/config
   fi
-
 
   echo -e "${RED}[${YELLOW} Waiting a few seconds until the master node stabilizes... ${RED}]${END}"
   for i in $(seq 1 60)
