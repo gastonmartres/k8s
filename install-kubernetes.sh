@@ -134,6 +134,26 @@ case $master in
     ;;
 esac
 
+
+echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Podman or Docker? (p/d)${END}${GREEN} ]${END}: "
+read engine
+case $engine in
+  p|P)
+    INSTALL_DOCKER=0
+    INSTALL_PODMAN=1
+    echo -e "\tWe will install Podman engine...\n"
+    ;;
+  d|D)
+    INSTALL_DOCKER=1
+    INSTALL_PODMAN=0
+    echo -e "\tWe will install Docker engine...\n"
+    ;;
+  *)
+    echo "Option not recognized... exit"
+    exit 1
+    ;;
+esac
+
 if  [ $IS_MASTER -eq 1 ];then
   echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}HELM? (y/n)${END}${GREEN} ]${END}: "
   read helm
@@ -170,24 +190,6 @@ if  [ $IS_MASTER -eq 1 ];then
       ;;
   esac
 
-  echo -en "${GREEN}[ ${YELLOW}Install ${BLUE}${BOLD}Podman or Docker? (p/d)${END}${GREEN} ]${END}: "
-  read engine
-  case $engine in
-    p|P)
-      INSTALL_DOCKER=0
-      INSTALL_PODMAN=1
-      echo -e "\tWe will install Podman engine...\n"
-      ;;
-    d|D)
-      INSTALL_DOCKER=1
-      INSTALL_PODMAN=0
-      echo -e "\tWe will install Docker engine...\n"
-      ;;
-    *)
-      echo "Option not recognized... exit"
-      exit 1
-      ;;
-  esac
 
   # if INSTALL_HELM == 1, then we show deployments that can be installed by helm.
   if [ $INSTALL_HELM -eq 1 ];then
