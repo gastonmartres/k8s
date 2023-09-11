@@ -12,6 +12,7 @@
 # - IP Address detection.
 # - Command line parameters
 # - Save config in file
+# - add modprobe br_netfilter
 
 RED="\e[31m"
 GREEN="\e[32m"
