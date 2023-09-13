@@ -288,9 +288,13 @@ if [ $UPDATE_PACKAGES -eq 1 ];then
   sudo dnf -y update
 fi
 
+# Install EPEL
+echo -e "${RED}[${YELLOW} Installing Tools ${RED}]${END}"
+sudo dnf install -y epel-release
+
 # Install tools
 echo -e "${RED}[${YELLOW} Installing Tools ${RED}]${END}"
-sudo dnf install -y bind-utils net-tools vim git tar wget iproute-tc
+sudo dnf install -y bind-utils net-tools vim git tar wget iproute-tc iscsi-initiator-utils qemu-guest-agent
 
 # Disable Swap
 echo -e "${RED}[${YELLOW} Disabling SWAP ${RED}]${END}"
